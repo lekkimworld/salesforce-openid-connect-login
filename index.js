@@ -134,7 +134,12 @@ app.get('/recent', (req, res) => {
         return res.status(417).send('You do not have this permission').end()
     }
 
-    fetch(`${req.session.payload.instance_url}/services/data/v44.0/recent/?limit=5`)
+    fetch(`${req.session.payload.instance_url}/services/data/v44.0/recent/?limit=5`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${req.session.payload.access_token}`
+        }
+    })
     .then(response => response.json())
     .then(data => {
         res.json(data)
