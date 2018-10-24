@@ -42,7 +42,7 @@ app.get('/oauth/callback', (req, res) => {
         const idtoken = payload.id_token
 
         // we need to verify the token before trusting it
-        return verifyIDToken(id_token)
+        return verifyIDToken(idtoken)
 
     }).then(verifyResult => {
         req.session.user = verifyResult
@@ -74,7 +74,7 @@ app.get('/*', (req, res) => {
 // listen
 app.listen(process.env.PORT || 3000)
 
-const verifyIDToken = id_token => {
+const verifyIDToken = idtoken => {
     return new Promise((resolve, reject) => {
         // get keys from Salesforce
         fetch(`${SF_LOGIN_URL}/id/keys`).then(res => {
@@ -84,7 +84,7 @@ const verifyIDToken = id_token => {
             const myKeySet = njwk.JWKSet.fromObject(keys)
 
             // get header
-            const idtoken_parts = id_token.split('.')
+            const idtoken_parts = idtoken.split('.')
 
             // parse header
             const header = JSON.parse(Buffer.from(idtoken_parts[0], 'base64').toString('utf8'))
