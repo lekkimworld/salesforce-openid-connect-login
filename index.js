@@ -24,6 +24,9 @@ app.use(session({
     cookie: { maxAge: 60000 }
 }))
 
+/**
+ * Specific route for OAuth callback.
+ */
 app.get('/oauth/callback', (req, res) => {
     // grab authorization code
     const authcode = req.query.code
@@ -48,11 +51,19 @@ app.get('/oauth/callback', (req, res) => {
         const idtoken = payload.id_token
 
         // we need to verify the token before trusting it
-        return verifyIDToken(idtoken)
+        return Promise.all([Promise.resolve(payload), verifyIDToken(idtoken)])
 
-    }).then(verifyResult => {
+    }).then(data => {
+        const payload = data[0]
+        const verifyResult = data[1]
+
+        // grab verify result and payload and store session
         req.session.user = verifyResult
+        req.session.payload = payload
+        console.log(JSON.stringify(payload, undefined, 2))
         req.session.save()
+
+        // redirect
         return res.redirect('/')
 
     }).catch(err => {
@@ -85,6 +96,12 @@ app.get('/', (req, res) => {
 // listen
 app.listen(process.env.PORT || 3000)
 
+/**
+ * Method to verify the ID Token we received from Salesforce using the standard 
+ * public keys provided by Salesforce.
+ * 
+ * @param {String} idtoken 
+ */
 const verifyIDToken = idtoken => {
     return new Promise((resolve, reject) => {
         // get keys from Salesforce
