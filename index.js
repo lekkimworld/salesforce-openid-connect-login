@@ -60,7 +60,7 @@ app.use((req, res, next) => {
     // see if there is a user object in the session
     if (!req.session.user) {
         // there is not - initiate authentication
-        return res.redirect(`${SF_LOGIN_URL}/services/oauth2/authorize?client_id=${OAUTH_CLIENT_ID}&redirect_uri=${OAUTH_REDIRECT_URI}&response_type=code`)
+        return res.redirect(`${SF_LOGIN_URL}/services/oauth2/authorize?client_id=${OAUTH_CLIENT_ID}&redirect_uri=${OAUTH_REDIRECT_URI}&response_type=code&prompt=consent`)
     } else {
         // yay
         return next()
