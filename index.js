@@ -11,6 +11,11 @@ const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com'
 
 const app = express()
+
+// json formatting
+app.set('json replacer', undefined)
+app.set('json spaces', 2)
+
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
@@ -67,8 +72,13 @@ app.use((req, res, next) => {
     }
 })
 
-app.get('/*', (req, res) => {
+app.get('/json', (req, res) => {
     res.json(req.session.user).end()
+})
+app.get('/', (req, res) => {
+    const user = req.session.user
+    const response = `<html><head><title>${user.body.name}</title></head><body>Hello ${user.body.name}!</body></html>\n`
+    res.send(response).end()
 })
 
 // listen
