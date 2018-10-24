@@ -60,7 +60,7 @@ app.get('/oauth/callback', (req, res) => {
         // grab verify result and payload and store session
         req.session.user = verifyResult
         req.session.payload = payload
-        console.log(JSON.stringify(payload, undefined, 2))
+        req.session.scopes = payload.scope.split(' ')
         req.session.save()
 
         // redirect
@@ -89,7 +89,11 @@ app.get('/json', (req, res) => {
 })
 app.get('/', (req, res) => {
     const user = req.session.user
-    const response = `<html><head><title>${user.body.name}</title></head><body>Hello ${user.body.name}!</body></html>\n`
+    let response = `<html><head><title>${user.body.name}</title></head><body>Hello ${user.body.name}!`
+    if (req.session.scopes.includes('web')) {
+        response += `<a href="${req.session.payload.instance_url}/secur/frontdoor.jsp?sid=${req.session.payload.access_token}">Go to Salesforce</a>`
+    }
+    response += `</body></html>\n`
     res.send(response).end()
 })
 
