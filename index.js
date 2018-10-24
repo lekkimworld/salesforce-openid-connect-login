@@ -3,9 +3,9 @@ const session = require('express-session')
 const fetch = require('node-fetch')
 const FormData = require('form-data')
 
-const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID || '3MVG9SemV5D80oBeVT7ei7H08lO.1quM_0aJqwSkse8URATlZ3VMqJFrhNUY94M8R8aQ8sMP1c3Rnm0IFkmrB'
-const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET || '7912037708683740117'
-const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI || 'https://httpbin.org/get'
+const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
+const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET
+const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com'
 
 const app = express()
@@ -15,16 +15,7 @@ app.use(session({
     saveUninitialized: true, 
     cookie: { maxAge: 60000 }
 }))
-app.use((req, res, next) => {
-    // see if there is a user object in the session
-    if (!req.session.user) {
-        // there is not - initiate authentication
-        return res.redirect(`${SF_LOGIN_URL}/services/oauth2/authorize?client_id=${OAUTH_CLIENT_ID}&redirect_uri=${OAUTH_REDIRECT_URI}&response_type=code`)
-    } else {
-        // yay
-        return next()
-    }
-})
+
 app.get('/oauth/callback\?code=:authcode', (req, res) => {
     // grab authorization code
     const authcode = req.params.authcode
@@ -52,6 +43,17 @@ app.get('/oauth/callback\?code=:authcode', (req, res) => {
         console.log(`Error: ${err.message}`, err)
         res.status(500).send(err.message).end()
     })
+})
+
+app.use((req, res, next) => {
+    // see if there is a user object in the session
+    if (!req.session.user) {
+        // there is not - initiate authentication
+        return res.redirect(`${SF_LOGIN_URL}/services/oauth2/authorize?client_id=${OAUTH_CLIENT_ID}&redirect_uri=${OAUTH_REDIRECT_URI}&response_type=code`)
+    } else {
+        // yay
+        return next()
+    }
 })
 
 app.get('/*', (req, res) => {
