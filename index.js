@@ -16,9 +16,9 @@ app.use(session({
     cookie: { maxAge: 60000 }
 }))
 
-app.get('/oauth/callback?code=:authcode', (req, res) => {
+app.get('/oauth/callback', (req, res) => {
     // grab authorization code
-    const authcode = req.params.authcode
+    const authcode = req.query.code
     if (!authcode) {
         return res.status(417).send('Expected authorization code').end()
     }
