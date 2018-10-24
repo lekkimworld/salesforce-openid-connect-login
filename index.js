@@ -142,7 +142,7 @@ app.get('/recent', (req, res) => {
     })
     .then(response => response.json())
     .then(data => {
-        let response = `<html><head><title>${user.body.name}</title></head><body><h1>${data.length} Recent Records</h1><ul>`
+        let response = `<html><head><title>Recent Records</title></head><body><h1>${data.length} Recent Records</h1><ul>`
         response += data.reduce((buffer, r) => {
             buffer += `<li>${r.Name} of type ${r.attributes.type} with ID ${r.Id}</li>`
             return buffer
