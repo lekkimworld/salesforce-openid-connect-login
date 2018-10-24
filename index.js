@@ -103,13 +103,6 @@ app.get('/logout', (req, res) => {
 })
 
 /**
- * Route for JSON response.
- */
-app.get('/json', (req, res) => {
-    res.json(req.session.user).end()
-})
-
-/**
  * Route for HTML response.
  */
 app.get('/', (req, res) => {
@@ -122,9 +115,39 @@ app.get('/', (req, res) => {
     if (req.session.scopes.includes('web')) {
         response += `<li><a href="${req.session.payload.instance_url}/secur/frontdoor.jsp?sid=${req.session.payload.access_token}">Go to Salesforce</a></li>`
     }
+
+    // if we got the api scope we can access Salesforce to get data on behalf of the user
+    if (req.session.scopes.includes('api')) {
+        response += `<li><a href="/recent">Show last 5 accessed records</a></li>`
+    }
     response += `<li><a href="/logout">Logout</a></li>`
     response += `</ul></body></html>\n`
     res.send(response).end()
+})
+
+/**
+ * Route for 5 most recent records accessed in Salesforce.
+ */
+app.get('/recent', (req, res) => {
+    // verify we have the scope
+    if (!req.session.scopes.includes('api')) {
+        return res.status(417).send('You do not have this permission').end()
+    }
+
+    fetch(`${req.session.payload.instance_url}/services/data/v44.0/recent/?limit=5`)
+    .then(response => response.json())
+    .then(data => {
+        res.json(data)
+    }).catch(err => {
+        res.status(500).send(`Unable to get data due to error (${err.message})`).end()
+    })
+})
+
+/**
+ * Route for JSON response.
+ */
+app.get('/json', (req, res) => {
+    res.json(req.session.user).end()
 })
 
 // listen
