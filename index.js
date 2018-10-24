@@ -22,6 +22,7 @@ app.get('/oauth/callback?code=:authcode', (req, res) => {
     if (!authcode) {
         return res.status(417).send('Expected authorization code').end()
     }
+    console.log(`Grabbed authcode: ${authcode}`)
 
     // exchange authcode
     const formdata = new FormData()
@@ -36,6 +37,7 @@ app.get('/oauth/callback?code=:authcode', (req, res) => {
     }).then(response => {
         return response.json()
     }).then(payload => {
+        console.log('Received payload back')
         req.session.user = payload
         req.session.save()
         return res.redirect('/')
