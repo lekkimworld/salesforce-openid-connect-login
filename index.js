@@ -2,6 +2,8 @@ const express = require('express')
 const session = require('express-session')
 const fetch = require('node-fetch')
 const FormData = require('form-data')
+const nJwt = require('njwt')
+const njwk = require('node-jwk')
 
 const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
 const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET
@@ -22,8 +24,7 @@ app.get('/oauth/callback', (req, res) => {
     if (!authcode) {
         return res.status(417).send('Expected authorization code').end()
     }
-    console.log(`Grabbed authcode: ${authcode}`)
-
+    
     // exchange authcode
     const formdata = new FormData()
     formdata.append('client_id', OAUTH_CLIENT_ID)
@@ -37,13 +38,21 @@ app.get('/oauth/callback', (req, res) => {
     }).then(response => {
         return response.json()
     }).then(payload => {
-        console.log('Received payload back')
-        req.session.user = payload
+        // get idtoken out of payload
+        const idtoken = payload.id_token
+
+        // we need to verify the token before trusting it
+        return verifyIDToken(id_token)
+
+    }).then(verifyResult => {
+        req.session.user = verifyResult
         req.session.save()
         return res.redirect('/')
+
     }).catch(err => {
         console.log(`Error: ${err.message}`, err)
         return res.status(500).send(err.message).end()
+
     })
 })
 
@@ -64,3 +73,35 @@ app.get('/*', (req, res) => {
 
 // listen
 app.listen(process.env.PORT || 3000)
+
+const verifyIDToken = id_token => {
+    return new Promise((resolve, reject) => {
+        // get keys from Salesforce
+        fetch(`${SF_LOGIN_URL}/id/keys`).then(res => {
+            return res.json()
+        }).then(keys => {
+            // parse jwk keys
+            const myKeySet = njwk.JWKSet.fromObject(keys)
+
+            // get header
+            const idtoken_parts = id_token.split('.')
+
+            // parse header
+            const header = JSON.parse(Buffer.from(idtoken_parts[0], 'base64').toString('utf8'))
+            if (!header.kid || header.typ !== 'JWT' || header.alg !== 'RS256') return rejrect(Error('Missing kid in header or invalid type or algorithm'))
+
+            // get key to use
+            const jwkKey = myKeySet.findKeyById(header.kid)
+            if (!jwkKey) throw Error(`Unable to find key for kid ${header.kid}`)
+            return jwkKey.key.toPublicKeyPEM()
+
+        }).then(pem => {
+            // verify signature
+            const verifyResult = nJwt.verify(idtoken, pem, 'RS256');
+            resolve(verifyResult)
+
+        }).catch(err => {
+            return reject(err)
+        })
+    })
+}
