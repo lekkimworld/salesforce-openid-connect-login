@@ -95,6 +95,14 @@ app.use((req, res, next) => {
 })
 
 /**
+ * Route for logout.
+ */
+app.get('/logout', (req, res) => {
+    req.session.destroy()
+    res.redirect('/').end()
+})
+
+/**
  * Route for JSON response.
  */
 app.get('/json', (req, res) => {
@@ -107,14 +115,15 @@ app.get('/json', (req, res) => {
 app.get('/', (req, res) => {
     // get user and start to build response
     const user = req.session.user
-    let response = `<html><head><title>${user.body.name}</title></head><body><h1>Hello ${user.body.name}!</h1>`
+    let response = `<html><head><title>${user.body.name}</title></head><body><h1>Hello ${user.body.name}!</h1><ul>`
 
     // if we got the web scope we can actually use the access_token to send the user 
     // back to Salesforce (if not the access_token cannot be used for UI login)
     if (req.session.scopes.includes('web')) {
-        response += `<a href="${req.session.payload.instance_url}/secur/frontdoor.jsp?sid=${req.session.payload.access_token}">Go to Salesforce</a>`
+        response += `<li><a href="${req.session.payload.instance_url}/secur/frontdoor.jsp?sid=${req.session.payload.access_token}">Go to Salesforce</a></li>`
     }
-    response += `</body></html>\n`
+    response += `<li><a href="/logout">Logout</a></li>`
+    response += `</ul></body></html>\n`
     res.send(response).end()
 })
 
