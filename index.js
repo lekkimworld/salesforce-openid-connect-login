@@ -16,7 +16,7 @@ app.use(session({
     cookie: { maxAge: 60000 }
 }))
 
-app.get('/oauth/callback\?code=:authcode', (req, res) => {
+app.get('/oauth/callback?code=:authcode', (req, res) => {
     // grab authorization code
     const authcode = req.params.authcode
     if (!authcode) {
@@ -41,7 +41,7 @@ app.get('/oauth/callback\?code=:authcode', (req, res) => {
         return res.redirect('/')
     }).catch(err => {
         console.log(`Error: ${err.message}`, err)
-        res.status(500).send(err.message).end()
+        return res.status(500).send(err.message).end()
     })
 })
 
