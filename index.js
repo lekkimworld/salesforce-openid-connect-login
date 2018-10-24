@@ -4,7 +4,9 @@ const fetch = require('node-fetch')
 const FormData = require('form-data')
 const nJwt = require('njwt')
 const njwk = require('node-jwk')
+const uuid = require('uuid/v4')
 
+// configuration from environment
 const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
 const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET
 const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI
@@ -17,11 +19,14 @@ const app = express()
 app.set('json replacer', undefined)
 app.set('json spaces', 2)
 
+// configure our session
 app.use(session({
-    secret: 'keyboard cat',
+    secret: uuid(),
     resave: false,
     saveUninitialized: true, 
-    cookie: { maxAge: 60000 }
+    cookie: {
+        maxAge: 5 * 60 * 1000 // 5 minutes
+    }
 }))
 
 /**
@@ -62,6 +67,8 @@ app.get('/oauth/callback', (req, res) => {
         req.session.payload = payload
         req.session.scopes = payload.scope.split(' ')
         req.session.save()
+        console.log(verifyResult)
+        console.log(payload)
 
         // redirect
         return res.redirect('/')
@@ -73,6 +80,9 @@ app.get('/oauth/callback', (req, res) => {
     })
 })
 
+/**
+ * Middleware to always make sure we have authenticated the user.
+ */
 app.use((req, res, next) => {
     // see if there is a user object in the session
     if (!req.session.user) {
@@ -84,12 +94,23 @@ app.use((req, res, next) => {
     }
 })
 
+/**
+ * Route for JSON response.
+ */
 app.get('/json', (req, res) => {
     res.json(req.session.user).end()
 })
+
+/**
+ * Route for HTML response.
+ */
 app.get('/', (req, res) => {
+    // get user and start to build response
     const user = req.session.user
-    let response = `<html><head><title>${user.body.name}</title></head><body>Hello ${user.body.name}!`
+    let response = `<html><head><title>${user.body.name}</title></head><body><h1>Hello ${user.body.name}!</h1>`
+
+    // if we got the web scope we can actually use the access_token to send the user 
+    // back to Salesforce (if not the access_token cannot be used for UI login)
     if (req.session.scopes.includes('web')) {
         response += `<a href="${req.session.payload.instance_url}/secur/frontdoor.jsp?sid=${req.session.payload.access_token}">Go to Salesforce</a>`
     }
@@ -130,6 +151,15 @@ const verifyIDToken = idtoken => {
         }).then(pem => {
             // verify signature
             const verifyResult = nJwt.verify(idtoken, pem, 'RS256');
+
+            // coming here means we verified the signature - now let's check that we 
+            // are the audience meaning it was generated for us
+            if (verifyResult.body.aud !== OAUTH_CLIENT_ID) {
+                // it wasn't
+                return reject(Error('Received JWT wasn\'t generated for us do we wont accept it!'))
+            }
+
+            // yay!
             resolve(verifyResult)
 
         }).catch(err => {
