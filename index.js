@@ -8,6 +8,7 @@ const njwk = require('node-jwk')
 const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
 const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET
 const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI
+const KID_OVERRIDE = process.env.KID_OVERRIDE
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com'
 
 const app = express()
@@ -101,7 +102,7 @@ const verifyIDToken = idtoken => {
             if (!header.kid || header.typ !== 'JWT' || header.alg !== 'RS256') return rejrect(Error('Missing kid in header or invalid type or algorithm'))
 
             // get key to use
-            const jwkKey = myKeySet.findKeyById(header.kid)
+            const jwkKey = myKeySet.findKeyById(KID_OVERRIDE || header.kid)
             if (!jwkKey) throw Error(`Unable to find key for kid ${header.kid}`)
             return jwkKey.key.toPublicKeyPEM()
 
