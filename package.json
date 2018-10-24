@@ -1,0 +1,24 @@
+{
+  "name": "salesforce-openid-connect-login",
+  "version": "1.0.0",
+  "description": "Example of using OpenID Connect with Salesforce for login including verifying the signature of the returned JWT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "salesforce",
+    "jwt",
+    "openid-connect"
+  ],
+  "author": "Mikkel Flindt Heisterberg (mheisterberg@salesforce.com)",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4",
+    "express-session": "^1.15.6",
+    "form-data": "^2.3.3",
+    "njwt": "^0.4.0",
+    "node-fetch": "^2.2.0",
+    "node-jwk": "^0.1.0"
+  }
+}
